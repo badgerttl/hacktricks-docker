@@ -1,0 +1,17 @@
+# Cloned HackTricks wiki (clone yourself or via script; don't commit)
+hacktricks/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Optional: local overrides
+.env
+.env.local
