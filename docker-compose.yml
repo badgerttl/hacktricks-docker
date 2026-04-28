@@ -1,0 +1,12 @@
+services:
+  hacktricks:
+    build: .
+    image: hacktricks-arm64
+    container_name: my-hacktricks
+    ports:
+      # Bind to loopback only (change to "3337:3337" or "8002:3337" for other host ports / LAN)
+      - "127.0.0.1:8002:3337"
+    volumes:
+      - ./hacktricks:/app
+    environment:
+      MDBOOK_PREPROCESSOR__HACKTRICKS__ENV: dev

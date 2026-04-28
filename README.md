@@ -4,7 +4,7 @@ Run the [HackTricks](https://github.com/HackTricks-wiki/hacktricks) wiki locally
 
 ## Prerequisites
 
-- **Podman** or **Docker**
+- **Podman** or **Docker**, with **Compose** available (`docker compose`, `podman compose`, or `docker-compose`)
 - **Git** (to clone the HackTricks repo)
 
 ## Quick start
@@ -21,22 +21,53 @@ Run the [HackTricks](https://github.com/HackTricks-wiki/hacktricks) wiki locally
    git clone https://github.com/HackTricks-wiki/hacktricks
    ```
 
-3. **Build and run:**
+3. **Build and run** (foreground; logs in the terminal):
    ```bash
-   ./build.sh
+   docker compose up --build
+   ```
+   Or with **Podman**:
+   ```bash
+   podman compose up --build
    ```
 
 4. **Open in a browser:**  
-   [http://localhost:3337](http://localhost:3337)
+   [http://localhost:8002](http://localhost:8002)  
+   The container listens on port **3337**; `docker-compose.yml` maps **host 8002 → container 3337**. Change the `ports` entry if you want another host port.
 
-## What `build.sh` does
+To run in the **background**:
+```bash
+docker compose up --build -d
+```
 
-- Uses **Podman** if available, otherwise **Docker**
-- Builds the image `hacktricks-arm64` (multi-stage: Rust builder, then minimal runtime)
-- Removes any existing container named `my-hacktricks`
-- Starts a new container that mounts `./hacktricks` at `/app` and serves on port **3337**
+Stop and remove the stack:
+```bash
+docker compose down
+```
 
-## Manual commands
+View logs when running detached:
+```bash
+docker compose logs -f
+```
+
+### Optional: `build.sh`
+
+If you prefer a single script (picks **Podman** when installed, else **Docker**) instead of Compose:
+
+```bash
+./build.sh
+```
+
+That maps **localhost:3337** on the host. Adjust the `-p` line in `build.sh` if it clashes with other services.
+
+## Troubleshooting
+
+If the service stops immediately, check:
+```bash
+docker compose ps -a
+docker compose logs
+```
+
+## Manual commands (without Compose)
 
 **Build only:**
 ```bash
@@ -47,12 +78,12 @@ docker build -t hacktricks-arm64 .
 
 **Run (detached):**
 ```bash
-podman run --rm -d -p 3337:3337 -v "$(pwd)/hacktricks:/app" --name my-hacktricks hacktricks-arm64
+podman run --rm -d -p 127.0.0.1:3337:3337 -v "$(pwd)/hacktricks:/app" --name my-hacktricks hacktricks-arm64
 ```
 
 **Run (foreground, to see logs):**
 ```bash
-podman run --rm -p 3337:3337 -v "$(pwd)/hacktricks:/app" hacktricks-arm64
+podman run --rm -p 127.0.0.1:3337:3337 -v "$(pwd)/hacktricks:/app" hacktricks-arm64
 ```
 
 **Stop the container:**
@@ -64,15 +95,17 @@ docker stop my-hacktricks
 
 ## Project layout
 
-| Path         | Description |
-|-------------|-------------|
-| `Dockerfile`| Multi-stage build: Rust image builds mdbook + mdbook-tabs; final image is minimal (Alpine or Debian) with Python and the binaries. |
-| `build.sh`  | Builds the image, starts the container, and optionally prunes. |
-| `hacktricks/` | Clone of [HackTricks-wiki/hacktricks](https://github.com/HackTricks-wiki/hacktricks); created by you or by a clone step. Not committed to git (see `.gitignore`). |
+| Path | Description |
+|------|-------------|
+| `Dockerfile` | Multi-stage build: Rust image builds mdbook + mdbook-tabs; final image is minimal Alpine with Python and the binaries. |
+| `docker-compose.yml` | Builds `hacktricks-arm64`, mounts `./hacktricks` at `/app`, publishes the book (see port mapping there). |
+| `build.sh` | Optional: build and run with Podman or Docker (no Compose). |
+| `hacktricks/` | Clone of [HackTricks-wiki/hacktricks](https://github.com/HackTricks-wiki/hacktricks); created by you. Not committed to git (see `.gitignore`). |
 
-## Port
+## Port and networking
 
-The book is served on **port 3337**. Change the `-p` mapping in `build.sh` or in your `run` command if you need another port.
+- Inside the container, mdbook serves on **3337**.
+- **Compose** maps **127.0.0.1:8002** → container **3337** by default. Edit `docker-compose.yml` (e.g. `"127.0.0.1:3337:3337"` or `"3337:3337"` for LAN access) to change it.
 
 ## License
 

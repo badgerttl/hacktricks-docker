@@ -11,4 +11,7 @@ COPY --from=builder /usr/local/cargo/bin/mdbook /usr/local/bin/
 COPY --from=builder /usr/local/cargo/bin/mdbook-tabs /usr/local/bin/
 
 WORKDIR /app
-CMD ["bash", "-c", "rm -rf /app/book && MDBOOK_PREPROCESSOR__HACKTRICKS__ENV=dev mdbook serve --hostname 0.0.0.0 --port 3337"]
+EXPOSE 3337
+ENV MDBOOK_PREPROCESSOR__HACKTRICKS__ENV=dev
+# Avoid `rm -rf /app/book`: busybox rm can fail on macOS bind mounts ("Directory not empty").
+CMD ["sh", "-c", "mdbook clean 2>/dev/null || true; exec mdbook serve --hostname 0.0.0.0 --port 3337"]
